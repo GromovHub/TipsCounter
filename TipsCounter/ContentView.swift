@@ -12,16 +12,43 @@ private func finalAmountPerPerson(inputAmount: String, numberOfPerson: Int) -> S
     return String(format: "%.2f" , amount/Double(numberOfPerson))
 }
 
+struct InfoView: View {
+    //TODO: send var from content to info through sheet
+    var inputAmount: String
+    var pickerPersonIndex: Int
+    var pickerTipIndex: Int
+    var finalAmount: String
+    
+    var body: some View {
+        Text("You are in info section")
+        Text("pickerPersonIndex -> \(pickerPersonIndex)")
+        Text("inputAmount -> \(inputAmount)")
+        Text("pickerTipIndex -> \(pickerTipIndex)")
+        Text("finalAmount -> \(finalAmount)")
+    }
+}
+
 struct ContentView: View {
     @State private var inputAmount = ""
     @State private var pickerPersonIndex: Int = 1
     @State private var pickerTipIndex = 2
+    @State private var showingSheet = false
     //TODO: add "Other" to array
     private var tipArray = ["0", "5", "10", "15", "20"]
-    //TODO: add tips to calculating
+    
     private var finalAmount: String {
-        let amount: Double = Double(inputAmount) ?? 0.0 //add incorrect input
-        return String(format: "%.2f" , amount/Double(pickerPersonIndex + 1))
+        let amount: Double = Double(inputAmount) ?? 0.0
+        let tips: Double = Double(tipArray[pickerTipIndex]) ?? 0.0
+        let person: Double = Double(pickerPersonIndex) + 1
+        let final = (amount * ((tips + 100) / 100)) / person
+        return String(format: "%.2f", final)
+    }
+    private var totalTips: String {
+        let amount: Double = Double(inputAmount) ?? 0.0
+        let person = Double(pickerPersonIndex)
+        let finalAmountInDouble = Double(finalAmount) ?? 0.0
+        let totalTips = finalAmountInDouble * (person + 1) - amount
+        return String(format: "%.2f", totalTips)
     }
     
    
@@ -31,6 +58,7 @@ struct ContentView: View {
             Form {
                 Section(header: Text("Input")) {
                     TextField(text: $inputAmount, prompt: Text("Amount"), label: {})
+                        .keyboardType(.decimalPad)
                     //TODO: bug with pickerPersonIndex
                     Picker(selection: $pickerPersonIndex) {
                         ForEach(1..<101) {
@@ -50,24 +78,28 @@ struct ContentView: View {
                     
                 }.textCase(.none)
                 Section(header: Text("Result")) {
-                    Text("Total For Person: \(finalAmount) ")
+                    Text("Final For Person: \(finalAmount) ")
+                    Text("Total tips: \(totalTips) ")
                 }.textCase(.none)
+                
+                //TODO: hide this section from alert
                 Section(header: Text("Developer section")) {
                     Text("pickerPersonIndex -> \(pickerPersonIndex)")
                     Text("inputAmount -> \(inputAmount)")
                     Text("pickerTipIndex -> \(pickerTipIndex)")
                     Text("finalAmount -> \(finalAmount)")
-                }
+                }.opacity(0.5)
             }
             .navigationTitle(Text("Tips Counter"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        //TODO: show alert
+                        showingSheet.toggle()
                     } label: {
                         Image(systemName: "info.circle")
-                    }
-                    
+                    }.sheet(isPresented: $showingSheet, content: {
+                        InfoView(inputAmount: inputAmount, pickerPersonIndex: pickerPersonIndex, pickerTipIndex: pickerTipIndex, finalAmount: finalAmount)
+                    })
                 }
             }
         }
